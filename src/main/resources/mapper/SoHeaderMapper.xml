@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hand.demo.infra.mapper.SoHeaderMapper">
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap id="BaseResultMap" type="com.hand.demo.domain.entity.SoHeader">
+        <result column="so_header_id" property="soHeaderId" jdbcType="DECIMAL"/>
+        <result column="order_number" property="orderNumber" jdbcType="VARCHAR"/>
+        <result column="company_id" property="companyId" jdbcType="DECIMAL"/>
+        <result column="order_date" property="orderDate" jdbcType="DATE"/>
+        <result column="order_status" property="orderStatus" jdbcType="VARCHAR"/>
+        <result column="customer_id" property="customerId" jdbcType="DECIMAL"/>
+        <result column="created_by" property="createdBy" jdbcType="DECIMAL"/>
+        <result column="creation_date" property="creationDate" jdbcType="DATE"/>
+        <result column="last_updated_by" property="lastUpdatedBy" jdbcType="DECIMAL"/>
+        <result column="last_update_date" property="lastUpdateDate" jdbcType="DATE"/>
+        <result column="object_version_number" property="objectVersionNumber" jdbcType="DECIMAL"/>
+        <collection property="companyList" ofType="com.hand.demo.domain.entity.Company">
+            <id column="company_id" property="companyId"/>
+            <result column="company_number" property="companyNumber"/>
+            <result column="company_name" property="companyName"/>
+        </collection>
+        <collection property="customerList" ofType="com.hand.demo.domain.entity.Customer">
+            <id column="customer_id" property="customerId"/>
+            <result column="customer_name" property="customerName"/>
+        </collection>
+        <collection property="soLineList" ofType="com.hand.demo.domain.entity.SoLine">
+            <id column="so_line_id" property="soLineId"/>
+            <result column="order_quantity" property="orderQuantity"/>
+            <result column="unit_selling_price" property="unitSellingPrice"/>
+            <result column="total_price" property="totalPrice"/>
+        </collection>
+    </resultMap>
+
+    <select id="query" resultMap="BaseResultMap">
+        SELECT
+        hsh.order_number,
+        hco.company_name,
+        hcu.customer_name,
+        hsh.order_date,
+        hsh.order_status,
+        sum(hsl.order_quantity * hsl.unit_selling_price) AS total_price
+        FROM
+        hodr_so_header hsh
+        LEFT JOIN hodr_company hco ON hsh.company_id = hco.company_id
+        LEFT JOIN hodr_customer hcu ON hcu.customer_id = hsh.customer_id
+        LEFT JOIN hodr_so_line hsl ON hsl.so_header_id = hsh.so_header_id
+        where 1=1
+        <if test="soHeader.companyNumber != null">
+            AND hco.company_number = #{soHeader.companyNumber}
+        </if>
+        <if test="soHeader.customerName != null">
+            AND hcu.customer_name = #{soHeader.customerName}
+        </if>
+        GROUP BY hsh.so_header_id
+        HAVING 1=1
+        <if test="soHeader.orderNumberInput != null">
+            <bind name="orderNumberLike" value="'%' + soHeader.orderNumberInput + '%'"/>
+            AND hsh.order_number like #{orderNumberLike}
+        </if>
+        <if test="soHeader.orderStatusInput != null">
+            AND hsh.order_status = #{soHeader.orderStatusInput}
+        </if>
+    </select>
+
+</mapper>
